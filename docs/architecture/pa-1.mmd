@@ -1,0 +1,113 @@
+---
+config:
+  theme: redux-color
+  look: elk
+  layout: elk
+---
+flowchart LR
+  %% Visão de componentes separados por responsabilidade. Detalhes: pa-1.md.
+  %% Escopo: entregas 1 a 3 e geração de contrato/parcelas da entrega 4.
+  Empresa["Cliente empresa"]
+  Analista["Analista autorizado"]
+  Bureau["Bureau externo / simulador<br/>dados de risco"]
+
+  subgraph PropostaCredito["Proposta Crédito — monólito modular .NET"]
+    subgraph API["Um processo API — endpoints distintos"]
+      PostProposta["POST /propostas<br/>Criar proposta com idempotência"]
+      GetProposta["GET /propostas/{id}<br/>Consultar estado e decisão"]
+      Webhook["POST /webhooks/bureau<br/>Autenticar e registrar resultado"]
+      DecisaoManual["POST /propostas/{id}/decisao-manual<br/>Registrar decisão do analista"]
+    end
+
+    subgraph Dados["Persistência compartilhada; escrita pelo módulo proprietário"]
+      Oracle[("Oracle — fonte de verdade<br/>propostas, consultas, decisões e contratos<br/>histórico, inbox, outbox e agendamentos")]
+      Redis[("Redis — cache de risco com TTL<br/>fallback para o bureau")]
+    end
+
+    subgraph Worker["Um processo Worker"]
+      Outbox["Dispatcher da outbox<br/>leases e retries agendados"]
+      PreparaAnalise["Handler: preparar análise<br/>Snapshot e versão das regras"]
+      RegistraConsulta["Handler: solicitar bureau<br/>Persistir intenção antes do ACK"]
+      EnviaBureau["Job: enviar ao bureau<br/>Chave idempotente estável"]
+      ConsultaBureau["Job: consultar bureau<br/>Polling e normalização do resultado"]
+      Reconciliador["Job: reconciliar pendências<br/>Leases, tentativas e prazos"]
+      MotorDecisao["Handler: decidir crédito<br/>Aprovar / rejeitar / análise manual"]
+      GeraContrato["Handler: gerar contrato<br/>Contrato e parcelas atômicos"]
+    end
+
+    subgraph Rabbit["RabbitMQ — entrega pelo menos uma vez"]
+      Exchange{{"Exchange direct<br/>proposta-credito.credito.v1"}}
+      FilaAnalise[["fila-solicitacao-analise"]]@{ shape: das }
+      FilaBureau[["fila-solicitacao-bureau"]]@{ shape: das }
+      FilaResultado[["fila-resultado-bureau"]]@{ shape: das }
+      FilaContrato[["fila-solicitacao-contrato"]]@{ shape: das }
+      DLX{{"DLX<br/>proposta-credito.credito.dlx.v1"}}@{ shape: das }
+      DLQAnalise[["fila-solicitacao-analise.dlq"]]@{ shape: das }
+      DLQBureau[["fila-solicitacao-bureau.dlq"]]@{ shape: das }
+      DLQResultado[["fila-resultado-bureau.dlq"]]@{ shape: das }
+      DLQContrato[["fila-solicitacao-contrato.dlq"]]@{ shape: das }
+    end
+  end
+
+  Empresa --> PostProposta
+  Empresa --> GetProposta
+  Analista -->|"consultar proposta autorizada"| GetProposta
+  Analista --> DecisaoManual
+  Bureau -.->|"callback autenticado"| Webhook
+  PostProposta -->|"proposta + histórico + outbox; 202 após commit"| Oracle
+  GetProposta <-->|"leitura autorizada; sem publicação"| Oracle
+  Webhook -->|"resultado + deduplicação + outbox; 2xx após commit"| Oracle
+  DecisaoManual -->|"decisão + histórico; outbox se aprovada"| Oracle
+  Oracle -->|"pendências prontas"| Outbox
+  Outbox -->|"mandatory + publisher confirms"| Exchange
+  Exchange -->|"analise.solicitar"| FilaAnalise
+  Exchange -->|"bureau.solicitar"| FilaBureau
+  Exchange -->|"bureau.resultado"| FilaResultado
+  Exchange -->|"contrato.gerar"| FilaContrato
+  FilaAnalise --> PreparaAnalise
+  FilaBureau --> RegistraConsulta
+  FilaResultado --> MotorDecisao
+  FilaContrato --> GeraContrato
+  PreparaAnalise <-->|"cache-aside"| Redis
+  RegistraConsulta -->|"intenção durável"| Oracle
+  Oracle -->|"intenções e consultas pendentes"| Reconciliador
+  Reconciliador --> EnviaBureau
+  Reconciliador --> ConsultaBureau
+  EnviaBureau <-->|"HTTPS: submissão"| Bureau
+  ConsultaBureau <-->|"HTTPS: polling"| Bureau
+  EnviaBureau -->|"submissão / resultado + outbox"| Oracle
+  ConsultaBureau -->|"resultado normalizado + outbox"| Oracle
+  PreparaAnalise -->|"estado + inbox + outbox"| Oracle
+  MotorDecisao -->|"decisão + inbox; outbox se aprovada"| Oracle
+  GeraContrato -->|"contrato + parcelas + inbox"| Oracle
+
+  FilaAnalise -.-> DLX
+  FilaBureau -.-> DLX
+  FilaResultado -.-> DLX
+  FilaContrato -.-> DLX
+  DLX -.->|"fila-solicitacao-analise"| DLQAnalise
+  DLX -.->|"fila-solicitacao-bureau"| DLQBureau
+  DLX -.->|"fila-resultado-bureau"| DLQResultado
+  DLX -.->|"fila-solicitacao-contrato"| DLQContrato
+
+  %% Bindings detalhados em pa-1.md:
+  %% analise.solicitar -> fila-solicitacao-analise
+  %% bureau.solicitar -> fila-solicitacao-bureau
+  %% bureau.resultado -> fila-resultado-bureau (antes fila-proposta-analisada)
+  %% contrato.gerar -> fila-solicitacao-contrato
+  %% Todos os produtores gravam outbox no Oracle; somente o dispatcher publica.
+  %% Webhook e polling normalizam o mesmo resultado; só o módulo Crédito decide.
+  %% Cada consumidor usa inbox, guardas de estado/versão e unicidade no banco.
+  %% ACK somente após commit; falha inválida ou tentativas esgotadas segue à DLX.
+  %% Setas dos jobs ao Oracle incluem a atualização da intenção/consulta.
+
+  classDef external fill:#f3f4f6,stroke:#4b5563,color:#111827,stroke-width:1px
+  classDef application fill:#eff6ff,stroke:#2563eb,color:#172554,stroke-width:1px
+  classDef data fill:#ecfdf5,stroke:#059669,color:#064e3b,stroke-width:1px
+  classDef messaging fill:#fffbeb,stroke:#d97706,color:#78350f,stroke-width:1px
+  classDef failure fill:#fff1f2,stroke:#e11d48,color:#881337,stroke-width:1px
+  class Empresa,Analista,Bureau external
+  class PostProposta,GetProposta,Webhook,DecisaoManual,Outbox,PreparaAnalise,RegistraConsulta,EnviaBureau,ConsultaBureau,Reconciliador,MotorDecisao,GeraContrato application
+  class Oracle,Redis data
+  class Exchange,FilaAnalise,FilaBureau,FilaResultado,FilaContrato messaging
+  class DLX,DLQAnalise,DLQBureau,DLQResultado,DLQContrato failure
