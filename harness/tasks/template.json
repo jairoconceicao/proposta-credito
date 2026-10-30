@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "PC-XX",
+  "objective": "Preencher comportamento esperado antes de executar.",
+  "scope": ["Preencher caminhos autorizados"],
+  "acceptance": ["Preencher resultados observaveis"],
+  "stopConditions": ["Falhas repetidas", "Limites esgotados"],
+  "maxAttempts": 1,
+  "maxSeconds": 600,
+  "steps": [
+    { "id": "verify", "executable": "pwsh", "arguments": ["-NoProfile", "-File", "scripts/verify.ps1"], "timeoutSeconds": 540 }
+  ]
+}

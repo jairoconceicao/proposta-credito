@@ -1,8 +1,8 @@
 # Desenvolvimento local e CI
 
-## O que existe no M0
+## O que existe em M0 e M1
 
-API HTTP, Worker com encerramento cooperativo, health checks, schema inicial Oracle, migrator independente, testes unitários/integração e workflow de CI. Cadastro, autenticação de negócio, propostas e handlers ainda pertencem aos próximos marcos. Os endpoints atuais expõem apenas saúde, sem dados de negócio.
+API HTTP, Worker com encerramento cooperativo, health checks, Oracle, migrator independente, testes e CI. M1 acrescenta cadastro de empresas, autenticação/autorização, propostas com histórico/outbox e idempotência transacional. Veja [contrato M1](specs/m1-cadastro-propostas.md). Handlers e decisões entram em M2.
 
 ## Pré-requisitos
 
@@ -25,7 +25,7 @@ pwsh -NoProfile -File ./scripts/verify.ps1
 
 Bootstrap cria `.env` com senhas aleatórias, inicia Oracle, aguarda a saúde do container, restaura dependências pelo lockfile e aplica migrations. Não copie as marcações de `.env.example`: elas documentam os nomes das variáveis, não são credenciais utilizáveis. A primeira execução pode levar vários minutos. Executar bootstrap novamente preserva dados e senhas.
 
-Verify executa restore com `--locked-mode`, build Release, testes unitários, migrations, integração Oracle e smoke HTTP de API/Worker. Qualquer comando que falhar encerra a verificação com erro. Relatórios TRX ficam em `artifacts/test-results/`. Logs do smoke ficam em `artifacts/smoke/` e não são publicados automaticamente.
+Verify executa restore com `--locked-mode`, build Release, testes unitários, migrations, integração Oracle, smoke HTTP de API/Worker e sete avaliações do harness. Qualquer comando que falhar encerra a verificação com erro. Relatórios TRX ficam em `artifacts/test-results/`. Logs do smoke ficam em `artifacts/smoke/` e não são publicados automaticamente.
 
 Para desenvolvimento sem banco:
 
@@ -61,9 +61,11 @@ O banco escuta somente em `127.0.0.1:15210`, serviço `FREEPDB1`. A imagem está
 |---|---|---|
 | `SYSTEM`/`SYS` | Inicialização do container | Administração local; não usados pelos hosts. |
 | `PC_OWNER` | Migrations e testes transacionais | Proprietário do schema, provisionado pela imagem. |
-| `PC_APP` | API e Worker | `CREATE SESSION` e `SELECT` explícito nas tabelas de metadados/histórico. Sem DDL nem escrita neste marco. |
+| `PC_APP` | API e Worker | Conexão, leitura de metadados/histórico, SELECT/INSERT nas tabelas M1 e UPDATE da resposta idempotente; sem DDL, DELETE ou escrita de metadados. |
 
 Os scripts carregam as conexões no ambiente dos processos, sem imprimi-las. Fora do ambiente Compose, configure `ConnectionStrings__Oracle` (runtime) e `ConnectionStrings__OracleMigrations` (owner) via mecanismo de segredos do ambiente. Os nomes de schema/usuário runtime são os definidos acima. Não coloque conexões com senha em `appsettings.json`, histórico de comandos, Issues ou PRs.
+
+M1: executar bootstrap novamente acrescenta tokens locais ao `.env`, sem trocar senhas Oracle. `run.ps1` e o smoke selecionam Development explicitamente; `verify.ps1` configura o modo fictício dos testes. Hosts iniciados diretamente fora de Development exigem JWT externo configurado; modo local em Staging/Production falha no startup. Não habilite Development em uma implantação real. `scripts/demo-m1.ps1` inicia sua própria API temporária e não imprime credenciais.
 
 Os usuários são criados na primeira inicialização do volume. Trocar apenas a senha em `.env` depois disso não troca a senha no Oracle; restaure os valores originais ou execute uma rotação explícita no banco. Não destrua um volume com dados que deseja preservar.
 

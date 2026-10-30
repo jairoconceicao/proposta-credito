@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "PC-09-PC-10",
+  "objective": "Comprovar idempotencia, autorizacao por empresa e atomicidade de propostas no Oracle.",
+  "scope": ["src", "tests", "scripts", "docs", "harness", "AGENTS.md"],
+  "acceptance": [
+    "Mesma chave/corpo devolve mesma proposta e resposta.",
+    "Mesma chave com corpo diferente retorna 409.",
+    "Concorrentes criam uma proposta, historico e outbox.",
+    "Falha antes do commit nao deixa efeitos parciais.",
+    "Empresa nao consulta proposta alheia."
+  ],
+  "stopConditions": ["Falha apos limite de tentativas", "Tempo acumulado esgotado", "Codigo ou tarefa diferentes na retomada"],
+  "maxAttempts": 1,
+  "maxSeconds": 600,
+  "steps": [
+    {
+      "id": "verify",
+      "executable": "pwsh",
+      "arguments": ["-NoProfile", "-File", "scripts/verify.ps1"],
+      "timeoutSeconds": 540
+    },
+    {
+      "id": "diff-check",
+      "executable": "git",
+      "arguments": ["diff", "--check"],
+      "timeoutSeconds": 30
+    }
+  ]
+}

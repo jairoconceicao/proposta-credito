@@ -1,7 +1,7 @@
 # Backlog de implementação — Proposta Crédito
 
 Referência: [plano de implementação](PLANO-IMPLEMENTACAO.md), [produto](../PROPOSTA.md) e [PA-1](architecture/pa-1.md).  
-Data: 30 de outubro de 2026. PC-01 a PC-05 implementadas e verificadas localmente; PC-06 implementada com aceite remoto pendente. Os demais itens estão pendentes. Os IDs abaixo são locais, não números de Issues já criadas. Veja [evidências do M0](M0-VALIDACAO.md).
+Data: 30 de outubro de 2026. PC-01 a PC-05 e PC-07 a PC-12 implementadas e verificadas localmente; PC-06 implementada com aceite remoto pendente. Os demais itens estão pendentes. Os IDs abaixo são locais, não números de Issues já criadas. Veja [evidências de M0](M0-VALIDACAO.md) e [M1](M1-VALIDACAO.md). Os checks `[x]` de M1 registram o aceite local; não encerram a pendência remota de PC-06.
 
 ## Como executar
 
@@ -67,53 +67,59 @@ Prioridades: **P0** funda o projeto e entrega a primeira decisão; **P1** comple
 
 ## M1 — Cadastro e propostas
 
-### [ ] PC-07 — Definir identidade e autorização por empresa
+### [x] PC-07 — Definir identidade e autorização por empresa
 
 **Prioridade:** P0 · **Depende de:** PC-03, PC-04.
 
 - Definir autenticação, claims, vínculo identidade/empresa e papéis de administrador, empresa, analista e operador. Disponibilizar identidades fictícias de laboratório.
 - **Aceite:** empresa deriva da identidade autenticada; credenciais inválidas são recusadas; permissões mínimas por operação. Autenticação de desenvolvimento não é habilitada em homologação.
 - **Verificação:** testes de autenticação, escopo entre empresas e configuração por ambiente.
+- **Resultado M1:** tokens locais aleatórios somente em Development; configuração JWT externa; papéis e vínculo Oracle verificados, com recusa em Staging/Production.
 
-### [ ] PC-08 — Implementar cadastro de empresas
+### [x] PC-08 — Implementar cadastro de empresas
 
 **Prioridade:** P0 · **Depende de:** PC-04, PC-07.
 
 - Implementar `POST /empresas` idempotente para administrador e `GET /empresas/{id}` autorizado; normalizar e validar CNPJ conforme contrato especificado.
 - **Aceite:** CNPJ único; repetição não duplica cadastro; dados inválidos são rejeitados; vínculo de identidade é estabelecido antes de receber propostas.
 - **Verificação:** testes de contrato HTTP, unicidade Oracle, repetição e acesso indevido.
+- **Resultado M1:** POST/GET implementados; CNPJ e responsável únicos, repetição e consultas autorizadas comprovadas.
 
-### [ ] PC-09 — Implementar envio e consulta transacional de propostas
+### [x] PC-09 — Implementar envio e consulta transacional de propostas
 
 **Prioridade:** P0 · **Depende de:** PC-05, PC-08.
 
 - Implementar proposta, histórico, chave idempotente e outbox na mesma transação. Criar `POST /propostas` e `GET /propostas/{id}` conforme PA-1.
 - **Aceite:** validar valores/prazo/moeda e empresa; retornar `202` e `Location` somente após commit; mesma chave/corpo retorna mesma resposta; corpo divergente retorna `409`. Persistir `UNIQUE(empresaId, operacao, chave)` e hash canônico.
 - **Verificação:** testes HTTP e Oracle; consulta mostra estado e situação operacional. Antes do dispatcher, documentar que a análise permanece pendente.
+- **Resultado M1:** contrato HTTP e transação implementados; GET informa `RECEBIDA` e `AGUARDANDO_PROCESSAMENTO`; publicação entra em M2.
 
-### [ ] PC-10 — Comprovar idempotência, isolamento e rollback
+### [x] PC-10 — Comprovar idempotência, isolamento e rollback
 
 **Prioridade:** P0 · **Depende de:** PC-06, PC-09.
 
 - Exercitar os invariantes da criação com requisições concorrentes e falhas antes do commit.
 - **Aceite:** uma proposta, um histórico inicial e um comando lógico por criação; mesma chave pode existir em empresas diferentes sem colisão; falha não deixa registros parciais; empresa não consulta proposta alheia.
 - **Verificação:** testes determinísticos em Oracle no CI, com sincronização de concorrência e injeção controlada de falha; relatar contagens e respostas.
+- **Resultado M1:** oito concorrentes idênticos, corrida divergente, isolamento de chaves e rollback após escritas comprovados no Oracle. Testes integrados ao verify/CI; execução remota desta alteração permanece pendente.
 
-### [ ] PC-11 — Preparar contexto e contrato mínimo do harness
+### [x] PC-11 — Preparar contexto e contrato mínimo do harness
 
 **Prioridade:** P0 · **Depende de:** PC-05, PC-06.
 
 - Criar `AGENTS.md` com comandos/invariantes e modelo de tarefa em `harness/tasks/`, com escopo, aceite, limites e condições de parada.
 - **Aceite:** contexto referencia a documentação existente; verificações são as mesmas do desenvolvimento/CI; execução registra tarefa, commit, configuração, comandos, resultados e pendências sem segredos.
 - **Verificação:** preencher contrato para PC-09/PC-10 e conferir que seus critérios têm verificações independentes.
+- **Resultado M1:** `AGENTS.md`, contrato/template e runner com orçamento, tentativas, logs sanitizados, fingerprint e checkpoint implementados; runner usa verificações do CI.
 
-### [ ] PC-12 — Executar piloto do harness com idempotência
+### [x] PC-12 — Executar piloto do harness com idempotência
 
 **Prioridade:** P0 · **Depende de:** PC-10, PC-11.
 
 - Registrar uma execução assistida do incremento de idempotência e criar avaliações mínimas em `harness/evals/`.
 - **Aceite:** verificação detecta solução defeituosa; execução para ao atingir limites; retomada usa progresso persistido; relatório distingue validado de pendente. Se PC-09 já estiver concluída, usar fixture ou branch descartável que reproduza o desafio.
 - **Verificação:** evidências de aceitação, rejeição, interrupção e retomada; registrar duração/configuração e custo quando disponível, sem construir orquestrador próprio como pré-requisito.
+- **Resultado M1:** sete avaliações e piloto real aprovados; interrupção/retomada sem repetir etapa concluída. IDs, fingerprint, tempo e limites registrados em [M1-VALIDACAO.md](M1-VALIDACAO.md); modelo/custo indisponíveis são desconhecidos.
 
 ## M2 — Primeira decisão completa
 
@@ -379,7 +385,7 @@ Esta matriz indica quem deve implementar a verificação; não comprova que ela 
 ## Controle dos marcos
 
 - [ ] M0 — Fundação comprovada localmente; falta aceite remoto de PC-06.
-- [ ] M1 — Cadastro, propostas e piloto AI-SDLC comprovados.
+- [x] M1 — Cadastro, propostas e piloto AI-SDLC comprovados localmente; execução remota dos checks acompanha PC-06.
 - [ ] M2 — Primeira decisão de ponta a ponta comprovada.
 - [ ] M3 — Resiliência e decisão manual comprovadas.
 - [ ] M4 — Contratos e parcelas comprovados.
