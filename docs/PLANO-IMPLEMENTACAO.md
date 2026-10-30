@@ -1,12 +1,12 @@
 # Plano de implementação — Proposta Crédito
 
 Data de referência: 30 de outubro de 2026.  
-Status: planejado; implementação ainda não iniciada.  
+Status: fundação M0 implementada e validada localmente; aceite remoto de CI pendente.
 Execução: [backlog com tarefas e critérios de aceite](BACKLOG.md).
 
 ## Ponto de partida
 
-O repositório Git já existe, com branch `main`, histórico inicial e remoto `origin` configurado. O checkout contém documentação do produto e da arquitetura. Ainda não contém aplicação, testes, ambiente local, scripts de verificação ou workflows de CI/CD. Configurações remotas de proteção e Actions não foram auditadas neste planejamento.
+O repositório Git já existe, com branch `main`, histórico inicial e remoto `origin` configurado. O planejamento começou com documentação do produto e da arquitetura. A entrega M0 acrescenta aplicação, testes, Oracle local, migrations, scripts e workflow de CI. A consulta remota de 30 de outubro de 2026 identificou `main` sem proteção; execução no Actions e checks obrigatórios permanecem pendentes. Veja [evidências e limites do M0](M0-VALIDACAO.md).
 
 Este plano operacionaliza a [proposta do produto](../PROPOSTA.md), o [PA-1](architecture/pa-1.md) e a [proposta de evolução e AI-SDLC](PROPOSTA-EVOLUCAO-AI-SDLC.md). A sequência abaixo organiza os incrementos; não substitui seus contratos e invariantes.
 

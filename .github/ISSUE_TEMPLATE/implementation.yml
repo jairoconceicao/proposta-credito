@@ -1,0 +1,37 @@
+name: Implementacao
+description: Tarefa com escopo, dependencias e aceite verificavel
+body:
+  - type: input
+    id: backlog
+    attributes:
+      label: ID do backlog
+      placeholder: PC-09
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objetivo e comportamento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Escopo e dependencias
+      description: Inclua limites, tarefas anteriores e documentos relevantes.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceite
+      description: Descreva resultados observaveis, incluindo falhas relevantes.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Verificacao e evidencias esperadas
+      description: Comandos, testes e links de execucao.
+    validations:
+      required: true
