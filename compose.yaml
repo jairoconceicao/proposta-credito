@@ -19,5 +19,24 @@ services:
       retries: 30
       start_period: 30s
     shm_size: 1gb
+  rabbitmq:
+    image: rabbitmq:4.2.9-management@sha256:d1fb8b38bd0805935907a22b2b7483fba38c9a8dd7e8a74bfba4a6e7a9e91707
+    hostname: proposta-rabbit
+    ports:
+      - "127.0.0.1:${RABBIT_PORT:-56720}:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: pc_worker
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD:?Execute scripts/bootstrap.ps1}
+      RABBITMQ_DEFAULT_VHOST: proposta-credito
+    volumes:
+      - rabbit-data:/var/lib/rabbitmq
+      - ./infra/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./infra/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
 volumes:
   oracle-data:
+  rabbit-data:

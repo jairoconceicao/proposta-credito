@@ -35,7 +35,8 @@ public sealed record SubmitProposal(string? Cnpj, decimal FaturamentoMensal, dec
 public sealed record ProposalAccepted(string PropostaId, string Estado);
 public sealed record HistoryResponse(string Estado, DateTime Instante);
 public sealed record ProposalResponse(string PropostaId, string EmpresaId, string Estado, int Versao,
-    DateTime CriadaEm, string SituacaoOperacional, string[] Motivos, DateTime? DecididaEm, HistoryResponse[] Historico);
+    DateTime CriadaEm, string SituacaoOperacional, string[] Motivos, DateTime? DecididaEm, HistoryResponse[] Historico,
+    string? VersaoRegras = null, DateTime? AvaliadaEm = null);
 
 // Test seam is injected through DI only; no HTTP/config switch can trigger a pre-commit fault.
 public interface IProposalCommitHook
@@ -106,8 +107,20 @@ public sealed class ProposalService(IdempotentCommandExecutor commands,
             ?? throw new IntakeException(404, "not-found", "Proposta nao encontrada.");
         var history = await database.ProposalHistory.AsNoTracking().Where(row => row.ProposalId == id)
             .OrderBy(row => row.OccurredAt).Select(row => new HistoryResponse(row.State, row.OccurredAt)).ToArrayAsync(cancellationToken);
+        var analysis = await database.Analyses.AsNoTracking().SingleOrDefaultAsync(row => row.Id == proposal.AnalysisId, cancellationToken);
+        var decision = await database.Decisions.AsNoTracking().SingleOrDefaultAsync(row => row.AnalysisId == proposal.AnalysisId, cancellationToken);
+        var situation = proposal.State switch
+        {
+            "APROVADA" => "CONTRATO_PENDENTE",
+            "REJEITADA" => "CONCLUIDA",
+            "EM_ANALISE_MANUAL" => "AGUARDANDO_ANALISTA",
+            _ => "AGUARDANDO_PROCESSAMENTO"
+        };
         return new ProposalResponse(proposal.Id, proposal.CompanyId, proposal.State, proposal.Version,
-            DateTime.SpecifyKind(proposal.CreatedAt, DateTimeKind.Utc), "AGUARDANDO_PROCESSAMENTO", [], null,
-            history.Select(row => row with { Instante = DateTime.SpecifyKind(row.Instante, DateTimeKind.Utc) }).ToArray());
+            DateTime.SpecifyKind(proposal.CreatedAt, DateTimeKind.Utc), situation,
+            analysis?.ReasonsJson is { } reasons ? JsonSerializer.Deserialize<string[]>(reasons)! : [],
+            decision is null ? null : DateTime.SpecifyKind(decision.DecidedAt, DateTimeKind.Utc),
+            history.Select(row => row with { Instante = DateTime.SpecifyKind(row.Instante, DateTimeKind.Utc) }).ToArray(),
+            analysis?.RulesVersion, analysis?.EvaluatedAt is { } evaluated ? DateTime.SpecifyKind(evaluated, DateTimeKind.Utc) : null);
     }
 }

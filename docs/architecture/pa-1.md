@@ -1,6 +1,6 @@
 # PA-1 — Concessão de crédito assíncrona
 
-Status: implementação incremental. M0 fornece fundação e M1 implementa cadastro, identidade, propostas idempotentes e gravação de histórico/outbox, conforme [evidências M1](../M1-VALIDACAO.md). Publicação, análise, decisão e contratos abaixo continuam sendo requisitos para os próximos marcos.
+Status: implementação incremental. M0/M1 fornecem fundação e cadastro; M2 implementa publicação, consumo idempotente, simulador local e decisão versionada, conforme [evidências M2](../M2-VALIDACAO.md). Bureau HTTP/Redis, retries/replay administrativos e contratos abaixo permanecem requisitos dos próximos marcos.
 
 [Diagrama principal](pa-1.mmd) · [Escopo do produto](../../PROPOSTA.md)
 

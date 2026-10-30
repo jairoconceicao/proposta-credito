@@ -23,6 +23,226 @@ namespace PropostaCredito.Infrastructure.Persistence.Migrations
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.BureauQuery", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<string>("AnalysisId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<string>("CausationId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(64)");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.Property<decimal?>("ExistingDebt")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("DECIMAL(14,2)");
+
+                    b.Property<DateTime?>("ObtainedAt")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.Property<string>("ProposalId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)");
+
+                    b.Property<decimal?>("TotalLimit")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("DECIMAL(14,2)");
+
+                    b.Property<string>("TraceParent")
+                        .HasMaxLength(128)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(128)");
+
+                    b.Property<DateTime?>("ValidUntil")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnalysisId");
+
+                    b.HasIndex("State", "CreatedAt");
+
+                    b.ToTable("BUREAU_CONSULTA", "PC_OWNER");
+                });
+
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.CreditAccount", b =>
+                {
+                    b.Property<string>("CompanyId")
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<decimal>("Reserved")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("DECIMAL(14,2)");
+
+                    b.Property<decimal>("TotalLimit")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("DECIMAL(14,2)");
+
+                    b.HasKey("CompanyId");
+
+                    b.ToTable("CREDITO_LIMITE", "PC_OWNER");
+                });
+
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.CreditAnalysis", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.Property<string>("CurrentQueryId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<DateTime>("DeadlineAt")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.Property<DateTime?>("EvaluatedAt")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)");
+
+                    b.Property<string>("ProposalId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<string>("ProposalSnapshot")
+                        .IsRequired()
+                        .HasColumnType("CLOB");
+
+                    b.Property<string>("ReasonsJson")
+                        .HasColumnType("CLOB");
+
+                    b.Property<string>("RulesVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProposalId")
+                        .IsUnique();
+
+                    b.ToTable("CREDITO_ANALISE", "PC_OWNER");
+                });
+
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.CreditDecision", b =>
+                {
+                    b.Property<string>("AnalysisId")
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("NVARCHAR2(100)");
+
+                    b.Property<DateTime>("DecidedAt")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.Property<string>("InputsJson")
+                        .IsRequired()
+                        .HasColumnType("CLOB");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)");
+
+                    b.Property<string>("ProposalId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<string>("QueryId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<string>("ReasonsJson")
+                        .IsRequired()
+                        .HasColumnType("CLOB");
+
+                    b.Property<string>("RulesVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.HasKey("AnalysisId");
+
+                    b.ToTable("CREDITO_DECISAO", "PC_OWNER");
+                });
+
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.InboxEntry", b =>
+                {
+                    b.Property<string>("Consumer")
+                        .HasMaxLength(80)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(80)");
+
+                    b.Property<string>("MessageId")
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<DateTime>("CompletedAt")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.Property<string>("LogicalHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(64)");
+
+                    b.Property<string>("ProposalId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("NVARCHAR2(32)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .IsUnicode(false)
+                        .HasColumnType("VARCHAR2(80)");
+
+                    b.HasKey("Consumer", "MessageId");
+
+                    b.ToTable("INBOX", "PC_OWNER");
+                });
+
             modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Empresas.Company", b =>
                 {
                     b.Property<string>("Id")
@@ -316,6 +536,42 @@ namespace PropostaCredito.Infrastructure.Persistence.Migrations
                             Key = "schema-version",
                             Value = "1"
                         });
+                });
+
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.BureauQuery", b =>
+                {
+                    b.HasOne("PropostaCredito.Infrastructure.Modules.Credito.CreditAnalysis", null)
+                        .WithMany()
+                        .HasForeignKey("AnalysisId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.CreditAccount", b =>
+                {
+                    b.HasOne("PropostaCredito.Infrastructure.Modules.Empresas.Company", null)
+                        .WithOne()
+                        .HasForeignKey("PropostaCredito.Infrastructure.Modules.Credito.CreditAccount", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.CreditAnalysis", b =>
+                {
+                    b.HasOne("PropostaCredito.Infrastructure.Modules.Propostas.Proposal", null)
+                        .WithOne()
+                        .HasForeignKey("PropostaCredito.Infrastructure.Modules.Credito.CreditAnalysis", "ProposalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Credito.CreditDecision", b =>
+                {
+                    b.HasOne("PropostaCredito.Infrastructure.Modules.Credito.CreditAnalysis", null)
+                        .WithOne()
+                        .HasForeignKey("PropostaCredito.Infrastructure.Modules.Credito.CreditDecision", "AnalysisId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PropostaCredito.Infrastructure.Modules.Empresas.CompanyMembership", b =>

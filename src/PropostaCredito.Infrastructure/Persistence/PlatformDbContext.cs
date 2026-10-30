@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PropostaCredito.Infrastructure.Modules.Empresas;
 using PropostaCredito.Infrastructure.Modules.Propostas;
 using PropostaCredito.Infrastructure.Modules.Shared;
+using PropostaCredito.Infrastructure.Modules.Credito;
 
 namespace PropostaCredito.Infrastructure.Persistence;
 
@@ -15,11 +16,17 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<ProposalHistory> ProposalHistory => Set<ProposalHistory>();
     public DbSet<IdempotencyRecord> Idempotency => Set<IdempotencyRecord>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+    public DbSet<CreditAccount> CreditAccounts => Set<CreditAccount>();
+    public DbSet<CreditAnalysis> Analyses => Set<CreditAnalysis>();
+    public DbSet<BureauQuery> BureauQueries => Set<BureauQuery>();
+    public DbSet<CreditDecision> Decisions => Set<CreditDecision>();
+    public DbSet<InboxEntry> Inbox => Set<InboxEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Owner);
         IntakeModel.Configure(modelBuilder);
+        CreditModel.Configure(modelBuilder);
         modelBuilder.Entity<PlatformMetadata>(entity =>
         {
             entity.ToTable("PLATFORM_METADATA");
