@@ -1,8 +1,8 @@
 # Desenvolvimento local e CI
 
-## O que existe em M0 e M1
+## O que existe até M2
 
-API HTTP, Worker com encerramento cooperativo, health checks, Oracle, migrator independente, testes e CI. M1 acrescenta cadastro de empresas, autenticação/autorização, propostas com histórico/outbox e idempotência transacional. Veja [contrato M1](specs/m1-cadastro-propostas.md). Handlers e decisões entram em M2.
+API HTTP, Worker, health checks, Oracle, migrator, testes e CI. M1 fornece cadastro/autorização e propostas idempotentes. M2 acrescenta RabbitMQ, dispatcher, inbox, intenção/simulador local de risco, regras versionadas e decisões consultáveis. Veja [M1](specs/m1-cadastro-propostas.md) e [M2](specs/m2-decisao-credito.md).
 
 ## Pré-requisitos
 
@@ -23,9 +23,9 @@ pwsh -NoProfile -File ./scripts/bootstrap.ps1
 pwsh -NoProfile -File ./scripts/verify.ps1
 ```
 
-Bootstrap cria `.env` com senhas aleatórias, inicia Oracle, aguarda a saúde do container, restaura dependências pelo lockfile e aplica migrations. Não copie as marcações de `.env.example`: elas documentam os nomes das variáveis, não são credenciais utilizáveis. A primeira execução pode levar vários minutos. Executar bootstrap novamente preserva dados e senhas.
+Bootstrap cria `.env` com senhas aleatórias, inicia Oracle e RabbitMQ, aguarda saúde, verifica usuário/topologia/policies, restaura dependências pelo lockfile e aplica migrations. Não copie as marcações de `.env.example`: elas documentam os nomes das variáveis, não são credenciais utilizáveis. A primeira execução pode levar vários minutos. Nova execução preserva dados/senhas e acrescenta variáveis locais novas sem rotacionar credenciais existentes.
 
-Verify executa restore com `--locked-mode`, build Release, testes unitários, migrations, integração Oracle, smoke HTTP de API/Worker e sete avaliações do harness. Qualquer comando que falhar encerra a verificação com erro. Relatórios TRX ficam em `artifacts/test-results/`. Logs do smoke ficam em `artifacts/smoke/` e não são publicados automaticamente.
+Verify executa restore com `--locked-mode`, build Release, testes, migrations, integração Oracle/RabbitMQ, smoke, demonstração M2 com recuperação do broker e sete avaliações do harness. Use ambiente local/CI sem outros workers ativos: o roteiro para e reinicia somente o RabbitMQ deste Compose. Falhas encerram a verificação com erro. TRXs ficam em `artifacts/test-results/`; demonstração em `artifacts/m2-demo/results.json`; logs locais não são publicados automaticamente.
 
 Para desenvolvimento sem banco:
 
@@ -49,9 +49,9 @@ pwsh -NoProfile -File ./scripts/run.ps1 -Service Worker
 | API | `http://127.0.0.1:5080/health/live` | `http://127.0.0.1:5080/health/ready` |
 | Worker | `http://127.0.0.1:5081/health/live` | `http://127.0.0.1:5081/health/ready` |
 
-Liveness retorna `200` sem consultar dependências. Readiness retorna `200` apenas com acesso ao Oracle, histórico de migrations exatamente compatível e marcador de schema esperado; retorna `503` quando banco/schema não estão prontos. Os hosts não migram o banco no startup. Os logs são JSON; detalhes de comandos/conexões EF estão desativados, e health checks não devolvem exceções do provedor.
+Liveness retorna `200` sem dependências. Readiness exige Oracle/schema compatíveis; no Worker, também exige broker e topologia passiva compatível. API permanece pronta com Oracle saudável quando só o broker cai. Os hosts não migram o banco no startup. Logs JSON propagam IDs/correlação e tipos de erro, sem parâmetros SQL/payload/valores financeiros. Health checks não devolvem exceções do provedor.
 
-`Ctrl+C` encerra os hosts. O Worker deste marco mantém apenas o ciclo de vida; processamento de mensagens entra em M2. O smoke usa portas temporárias e limpa somente os processos que iniciou; o teste unitário do Worker verifica cancelamento cooperativo separadamente.
+`Ctrl+C` encerra os hosts. Worker publica outbox, consome três etapas e processa intenções locais; `GerarContrato` fica na fila para M4. O smoke usa portas temporárias e limpa seus processos; o teste unitário de ciclo de vida verifica cancelamento separadamente.
 
 ## Oracle e credenciais
 
@@ -61,7 +61,7 @@ O banco escuta somente em `127.0.0.1:15210`, serviço `FREEPDB1`. A imagem está
 |---|---|---|
 | `SYSTEM`/`SYS` | Inicialização do container | Administração local; não usados pelos hosts. |
 | `PC_OWNER` | Migrations e testes transacionais | Proprietário do schema, provisionado pela imagem. |
-| `PC_APP` | API e Worker | Conexão, leitura de metadados/histórico, SELECT/INSERT nas tabelas M1 e UPDATE da resposta idempotente; sem DDL, DELETE ou escrita de metadados. |
+| `PC_APP` | API e Worker | Leitura/append de domínio e updates explícitos para idempotência, estados, outbox e reserva de limite; sem DDL, DELETE ou escrita de metadados. |
 
 Os scripts carregam as conexões no ambiente dos processos, sem imprimi-las. Fora do ambiente Compose, configure `ConnectionStrings__Oracle` (runtime) e `ConnectionStrings__OracleMigrations` (owner) via mecanismo de segredos do ambiente. Os nomes de schema/usuário runtime são os definidos acima. Não coloque conexões com senha em `appsettings.json`, histórico de comandos, Issues ou PRs.
 
@@ -95,6 +95,16 @@ DDL Oracle tem commits implícitos: uma migration parcialmente executada pode ex
 - Bootstrap após interrupção: execute novamente; não apague `.env` mantendo um volume inicializado com outras senhas.
 
 Para parar e preservar os dados: `docker compose stop`. Recriação de volume só deve ser feita explicitamente para um ambiente descartável; o bootstrap não apaga dados.
+
+## RabbitMQ e decisão de crédito
+
+RabbitMQ escuta apenas em `127.0.0.1:56720`; management não é publicado. `bootstrap.ps1 -RabbitPort 56721` define outra porta na primeira execução; depois altere `RABBIT_PORT` no `.env`. Conexão: vhost `proposta-credito`, usuário `pc_worker`, senha local aleatória. Fora dos scripts, configure `Rabbit__Host`, `Rabbit__Port`, `Rabbit__VirtualHost`, `Rabbit__User`, `Rabbit__Password`, `Rabbit__UseTls`. TLS é obrigatório fora de Development.
+
+Imagem, volume e definitions estão no Compose. Bootstrap garante usuário sem tag administrativa e privilégios no namespace `proposta-credito.credito...`/`fila-...`; inspeção administrativa usa Docker/CLI local, sem promover o usuário runtime. Policies efetivas e bindings são conferidos por `scripts/inspect-messaging.ps1`.
+
+Execute `scripts/demo-m2.ps1` para os três resultados ou acrescente `-ExerciseBrokerRecovery` para provar aceitação com broker parado e retomada automática. Roteiro usa a empresa fictícia local de M1 e chaves estáveis para os três casos; a proposta de recuperação recebe chave nova. Aprovações reservam limite: o roteiro não libera reservas nem apaga dados automaticamente.
+
+Regras/fixtures e limitações estão no [contrato M2](specs/m2-decisao-credito.md). Não há bureau HTTP, Redis, assinatura/desembolso ou contrato gerado. Um nó quorum não garante alta disponibilidade. Falta de espaço durante primeira inicialização pode corromper arquivos do broker: confira disco do host e armazenamento Docker; nunca apague volume existente para ocultar uma falha de dados. Recriação só é aceitável para um ambiente comprovadamente descartável.
 
 ## CI e proteção de main
 

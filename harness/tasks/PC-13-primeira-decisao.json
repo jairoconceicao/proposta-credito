@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "PC-13-PC-18",
+  "objective": "Comprovar primeira decisao assincrona explicavel com Oracle e RabbitMQ reais.",
+  "scope": ["src", "tests", "scripts", "infra", "docs", "harness", "compose.yaml"],
+  "acceptance": [
+    "Regras lab-v1 com fronteiras e arredondamento explicitos.",
+    "Confirms/mandatory e lease preservam outbox em falhas.",
+    "Commit antes de ACK e inbox evitam efeitos duplicados.",
+    "Reserva transacional impede aprovacoes acima do limite compartilhado.",
+    "API/Worker reais produzem aprovacao, rejeicao e revisao, inclusive apos recuperar broker."
+  ],
+  "stopConditions": ["Verificacao falha", "Orcamento de tempo esgotado", "Ambiente de integracao indisponivel"],
+  "maxAttempts": 1,
+  "maxSeconds": 900,
+  "steps": [
+    { "id": "verify", "executable": "pwsh", "arguments": ["-NoProfile", "-File", "scripts/verify.ps1"], "timeoutSeconds": 840 },
+    { "id": "diff-check", "executable": "git", "arguments": ["diff", "--check"], "timeoutSeconds": 30 }
+  ]
+}

@@ -2,6 +2,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Oracle.EntityFrameworkCore" />
+    <PackageReference Include="RabbitMQ.Client" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <!-- Oracle's transitive minimum selects a vulnerable PKCS release; keep the patched .NET line. -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" />

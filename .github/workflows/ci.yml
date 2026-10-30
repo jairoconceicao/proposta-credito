@@ -43,6 +43,7 @@ jobs:
             artifacts/test-results/*.trx
             artifacts/harness/evals/**/results.json
             artifacts/harness/runs/**/state.json
+            artifacts/m2-demo/results.json
           if-no-files-found: warn
           retention-days: 7
       - name: Stop disposable Oracle

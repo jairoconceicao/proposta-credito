@@ -22,6 +22,7 @@ try {
         Invoke-Checked dotnet @('run', '--project', 'tools/PropostaCredito.DatabaseMigrator', '--configuration', 'Release', '--no-build')
         Invoke-Checked dotnet @('test', 'tests/PropostaCredito.IntegrationTests', '--configuration', 'Release', '--no-build', '--logger', 'trx;LogFileName=integration.trx', '--results-directory', $results)
         Invoke-Checked pwsh @('-NoProfile', '-File', './scripts/smoke.ps1')
+        Invoke-Checked pwsh @('-NoProfile', '-File', './scripts/demo-m2.ps1', '-ExerciseBrokerRecovery')
         Invoke-Checked pwsh @('-NoProfile', '-File', './harness/evals/run.ps1')
     }
     Write-Host "Verificacao '$Scope' aprovada. Relatorios em artifacts/test-results."

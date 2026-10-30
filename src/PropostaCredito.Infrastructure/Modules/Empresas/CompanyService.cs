@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PropostaCredito.Infrastructure.Modules.Shared;
 using PropostaCredito.Infrastructure.Persistence;
+using PropostaCredito.Infrastructure.Modules.Credito;
 
 namespace PropostaCredito.Infrastructure.Modules.Empresas;
 
@@ -34,6 +35,7 @@ public sealed class CompanyService(IdempotentCommandExecutor commands, IDbContex
         {
             var company = new Company { Id = Guid.NewGuid().ToString("N"), Cnpj = cnpj, Name = name, CreatedAt = DateTime.UtcNow };
             database.Companies.Add(company);
+            database.CreditAccounts.Add(new CreditAccount { CompanyId = company.Id });
             database.Memberships.Add(new CompanyMembership { Subject = subject, CompanyId = company.Id });
             try
             {

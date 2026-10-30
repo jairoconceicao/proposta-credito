@@ -77,11 +77,17 @@ public sealed class IntakeFactory : WebApplicationFactory<Program>
         await using var database = new DesignTimeDbContextFactory().CreateDbContext([]);
         var companyIds = await database.Memberships.Where(row => row.Subject.StartsWith(Prefix)).Select(row => row.CompanyId).ToArrayAsync();
         var proposalIds = await database.Proposals.Where(row => companyIds.Contains(row.CompanyId)).Select(row => row.Id).ToArrayAsync();
+        var analysisIds = await database.Analyses.Where(row => proposalIds.Contains(row.ProposalId)).Select(row => row.Id).ToArrayAsync();
+        await database.Inbox.Where(row => proposalIds.Contains(row.ProposalId)).ExecuteDeleteAsync();
+        await database.Decisions.Where(row => analysisIds.Contains(row.AnalysisId)).ExecuteDeleteAsync();
+        await database.BureauQueries.Where(row => analysisIds.Contains(row.AnalysisId)).ExecuteDeleteAsync();
+        await database.Analyses.Where(row => proposalIds.Contains(row.ProposalId)).ExecuteDeleteAsync();
         await database.Outbox.Where(row => proposalIds.Contains(row.ProposalId)).ExecuteDeleteAsync();
         await database.ProposalHistory.Where(row => proposalIds.Contains(row.ProposalId)).ExecuteDeleteAsync();
         await database.Proposals.Where(row => companyIds.Contains(row.CompanyId)).ExecuteDeleteAsync();
         await database.Idempotency.Where(row => companyIds.Contains(row.Scope) || row.Scope == "admin:" + Subject(0)).ExecuteDeleteAsync();
         await database.Memberships.Where(row => row.Subject.StartsWith(Prefix)).ExecuteDeleteAsync();
+        await database.CreditAccounts.Where(row => companyIds.Contains(row.CompanyId)).ExecuteDeleteAsync();
         await database.Companies.Where(row => companyIds.Contains(row.Id)).ExecuteDeleteAsync();
     }
 }

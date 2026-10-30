@@ -1,7 +1,7 @@
 # Backlog de implementação — Proposta Crédito
 
 Referência: [plano de implementação](PLANO-IMPLEMENTACAO.md), [produto](../PROPOSTA.md) e [PA-1](architecture/pa-1.md).  
-Data: 30 de outubro de 2026. PC-01 a PC-05 e PC-07 a PC-12 implementadas e verificadas localmente; PC-06 implementada com aceite remoto pendente. Os demais itens estão pendentes. Os IDs abaixo são locais, não números de Issues já criadas. Veja [evidências de M0](M0-VALIDACAO.md) e [M1](M1-VALIDACAO.md). Os checks `[x]` de M1 registram o aceite local; não encerram a pendência remota de PC-06.
+Data: 30 de outubro de 2026. PC-01 a PC-05 e PC-07 a PC-18 implementadas e verificadas localmente; PC-06 implementada com aceite remoto pendente. Os demais itens estão pendentes. Os IDs abaixo são locais, não números de Issues já criadas. Veja [M0](M0-VALIDACAO.md), [M1](M1-VALIDACAO.md) e [M2](M2-VALIDACAO.md). Checks `[x]` de M1/M2 registram aceite local e não encerram a pendência remota de PC-06.
 
 ## Como executar
 
@@ -123,53 +123,59 @@ Prioridades: **P0** funda o projeto e entrega a primeira decisão; **P1** comple
 
 ## M2 — Primeira decisão completa
 
-### [ ] PC-13 — Especificar as três regras de crédito
+### [x] PC-13 — Especificar as três regras de crédito
 
 **Prioridade:** P0 · **Depende de:** PC-09.
 
 - Documentar fórmula da parcela, arredondamento, comprometimento da receita, endividamento e limite disponível, com fixtures fictícias e versão.
 - **Aceite:** exemplos de aprovação, rejeição, revisão manual e valores de fronteira têm resultados inequívocos; definir reserva concorrente quando o limite for compartilhado.
 - **Verificação:** revisão dos exemplos antes do motor; transformar os casos em testes em PC-17.
+- **Resultado M2:** [lab-v1](specs/m2-decisao-credito.md), fronteiras inclusivas, precedência e arredondamento testados; reserva do limite protegida no Oracle.
 
-### [ ] PC-14 — Provisionar RabbitMQ e contratos de mensagens
+### [x] PC-14 — Provisionar RabbitMQ e contratos de mensagens
 
 **Prioridade:** P0 · **Depende de:** PC-02, PC-05.
 
 - Declarar exchange, quatro filas e DLQs, bindings e políticas quorum do PA-1. Versionar envelope e schemas, com identidade lógica, correlação, tentativa e replay explícitos.
 - **Aceite:** mensagens persistentes, roteamento e dead-lettering configurados; versão escolhida suporta as políticas; laboratório de um nó documenta ausência de alta disponibilidade.
 - **Verificação:** teste de topologia e roteamento no CI; schema inválido identificado; comprovar políticas efetivas no broker.
+- **Resultado M2:** imagem/cliente fixados, oito filas quorum, policies/bindings efetivos e transporte persistente verificados; schema não suportado comprovadamente chega à DLQ. Testes incorporados ao CI, sem aceite remoto presumido.
 
-### [ ] PC-15 — Implementar dispatcher da outbox
+### [x] PC-15 — Implementar dispatcher da outbox
 
 **Prioridade:** P0 · **Depende de:** PC-09, PC-14.
 
 - Reivindicar pendências por lease/token, respeitar `availableAt` e publicar com confirms e `mandatory`.
 - **Aceite:** marcar enviado somente com confirm positivo e sem retorno de rota; nack/timeout/sem rota mantêm pendência; token vencido não atualiza registro; broker indisponível não perde proposta.
 - **Verificação:** concorrência entre dispatchers e quedas antes/depois da publicação, incluindo publicação duplicada recuperável.
+- **Resultado M2:** lease/token, confirmações e mandatory implementados; concorrência, falta de rota, token vencido e falha após confirm cobertos em integração real.
 
-### [ ] PC-16 — Implementar preparação da análise e inbox
+### [x] PC-16 — Implementar preparação da análise e inbox
 
 **Prioridade:** P0 · **Depende de:** PC-13, PC-15.
 
 - Consumir `SolicitarAnalise`, fixar snapshot e versão das regras, gravar intenção de consulta e outbox com inbox na mesma transação. Usar inicialmente resultados determinísticos do simulador.
 - **Aceite:** ACK somente após commit; `UNIQUE(consumer, messageId)` bloqueia efeitos duplicados; reentrega preserva análise e versão; HTTP externo nunca ocorre dentro da transação.
 - **Verificação:** queda antes do ACK e execução concorrente da mesma mensagem; uma única análise/intenção efetiva.
+- **Resultado M2:** snapshot/regra fixados, intenção durável, inbox e ACK pós-commit; redelivery real preserva uma análise/consulta. Simulador local conclui intenções sem HTTP.
 
-### [ ] PC-17 — Implementar motor e consulta da decisão
+### [x] PC-17 — Implementar motor e consulta da decisão
 
 **Prioridade:** P0 · **Depende de:** PC-13, PC-16.
 
 - Executar regras com fixtures de risco, persistir motivos/snapshot/versão/autor e atualizar estado/histórico; aprovação gera `GerarContrato` na outbox.
 - **Aceite:** uma decisão final por análise; rejeição/revisão manual não geram contrato; guarda de estado/versão e reserva de limite impedem decisões conflitantes e excesso de limite.
 - **Verificação:** testes de fronteira, mensagens duplicadas/antigas e duas aprovações concorrentes pelo limite; GET não expõe payload bruto de risco. Comando de contrato fica pendente até M4.
+- **Resultado M2:** avaliação/decisão persistidas com motivos e versão, GET autorizado e reserva atômica; concorrência, snapshot, mensagens antigas e rollback comprovados. Aprovação apenas agenda contrato.
 
-### [ ] PC-18 — Demonstrar a primeira fatia de ponta a ponta
+### [x] PC-18 — Demonstrar a primeira fatia de ponta a ponta
 
 **Prioridade:** P0 · **Depende de:** PC-06, PC-10, PC-15, PC-16, PC-17.
 
 - Criar demonstração reproduzível de envio → processamento → consulta, com casos aprovado, rejeitado e encaminhado para revisão.
 - **Aceite:** resultado determinístico contém motivos e versão; correlação atravessa API/outbox/Worker; broker recuperado publica backlog. Identificar capacidades ainda pendentes de M3/M4.
 - **Verificação:** teste ponta a ponta no CI e roteiro executável no README, sem depender de bureau externo.
+- **Resultado M2:** API/Worker reais aprovam, rejeitam e encaminham à revisão; broker parado mantém proposta consultável e sua recuperação conclui processamento. Roteiro no verify/CI e piloto registrado em [M2-VALIDACAO.md](M2-VALIDACAO.md).
 
 ## M3 — Resiliência e análise manual
 
@@ -386,7 +392,7 @@ Esta matriz indica quem deve implementar a verificação; não comprova que ela 
 
 - [ ] M0 — Fundação comprovada localmente; falta aceite remoto de PC-06.
 - [x] M1 — Cadastro, propostas e piloto AI-SDLC comprovados localmente; execução remota dos checks acompanha PC-06.
-- [ ] M2 — Primeira decisão de ponta a ponta comprovada.
+- [x] M2 — Primeira decisão e recuperação do broker comprovadas localmente; execução remota dos checks acompanha PC-06.
 - [ ] M3 — Resiliência e decisão manual comprovadas.
 - [ ] M4 — Contratos e parcelas comprovados.
 - [ ] M5 — Pagamentos e estornos comprovados.

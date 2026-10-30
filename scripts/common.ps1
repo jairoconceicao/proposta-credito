@@ -33,7 +33,7 @@ function Import-LocalEnvironment {
         $values = @{}
         foreach ($line in Get-Content -LiteralPath $envFile) {
             if ($line -match '^\s*(#.*)?$') { continue }
-            if ($line -notmatch '^(ORACLE_PASSWORD|APP_USER_PASSWORD|PC_RUNTIME_PASSWORD|ORACLE_PORT|DEV_ADMIN_TOKEN|DEV_EMPRESA_A_TOKEN|DEV_EMPRESA_B_TOKEN|DEV_ANALISTA_TOKEN|DEV_OPERADOR_TOKEN)=([A-Za-z0-9]+)$') {
+            if ($line -notmatch '^(ORACLE_PASSWORD|APP_USER_PASSWORD|PC_RUNTIME_PASSWORD|ORACLE_PORT|RABBIT_PASSWORD|RABBIT_PORT|DEV_ADMIN_TOKEN|DEV_EMPRESA_A_TOKEN|DEV_EMPRESA_B_TOKEN|DEV_ANALISTA_TOKEN|DEV_OPERADOR_TOKEN)=([A-Za-z0-9]+)$') {
                 throw 'Formato invalido no .env. Use os valores alfanumericos gerados pelo bootstrap.'
             }
             $values[$Matches[1]] = $Matches[2]
@@ -50,6 +50,11 @@ function Import-LocalEnvironment {
         if ($oraclePort -lt 1024 -or $oraclePort -gt 65535) { throw 'ORACLE_PORT deve estar entre 1024 e 65535.' }
         $env:ConnectionStrings__Oracle = "User Id=PC_APP;Password=$($values['PC_RUNTIME_PASSWORD']);Data Source=localhost:$oraclePort/FREEPDB1;Connection Timeout=5;"
         $env:ConnectionStrings__OracleMigrations = "User Id=PC_OWNER;Password=$($values['APP_USER_PASSWORD']);Data Source=localhost:$oraclePort/FREEPDB1;Connection Timeout=5;"
+        if ($values.ContainsKey('RABBIT_PASSWORD')) {
+            $env:Rabbit__Password = $values['RABBIT_PASSWORD']
+            $env:Rabbit__Host = 'localhost'
+            $env:Rabbit__Port = if ($values.ContainsKey('RABBIT_PORT')) { $values['RABBIT_PORT'] } else { '56720' }
+        }
         $identitySpecs = @(
             @('DEV_ADMIN_TOKEN', 'admin-local', 'Administrador'),
             @('DEV_EMPRESA_A_TOKEN', 'empresa-a', 'Empresa'),

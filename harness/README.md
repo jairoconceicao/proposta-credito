@@ -29,3 +29,5 @@ pwsh -NoProfile -File harness/evals/run.ps1
 Sete cenários: fixture que duplica propostas; falha repetida; timeout; orçamento acumulado; interrupção/retomada; segredo conhecido redigido; contrato alterado recusado. As saídas `failed` dos casos negativos são esperadas; o script de avaliação precisa encerrar com 0. O verify completo e o CI já executam essas avaliações.
 
 O piloto real executa `scripts/verify.ps1`, incluindo os testes HTTP/Oracle de propostas, e `git diff --check`. Para uma tarefa nova, copie `tasks/template.json` e preencha objetivo, escopo, critérios e verificadores. O escopo é orientação, não restrição de filesystem. O runner não substitui isolamento do ambiente, revisão humana, nem mede qualidade geral de um agente. Veja [ADR 0002](../docs/adr/0002-m1-identidade-idempotencia-harness.md).
+
+Para M2, use `-TaskPath harness/tasks/PC-13-primeira-decisao.json` com um RunId novo. O verify completo agora inclui RabbitMQ, decisão de crédito e parada/recuperação do broker deste Compose; execute em laboratório sem outros workers ativos. Veja [evidências M2](../docs/M2-VALIDACAO.md).

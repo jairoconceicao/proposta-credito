@@ -1,0 +1,34 @@
+{
+  "vhosts": [{ "name": "proposta-credito" }],
+  "exchanges": [
+    { "name": "proposta-credito.credito.v1", "vhost": "proposta-credito", "type": "direct", "durable": true, "auto_delete": false, "internal": false, "arguments": {} },
+    { "name": "proposta-credito.credito.dlx.v1", "vhost": "proposta-credito", "type": "direct", "durable": true, "auto_delete": false, "internal": false, "arguments": {} }
+  ],
+  "queues": [
+    { "name": "fila-solicitacao-analise", "vhost": "proposta-credito", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "fila-solicitacao-bureau", "vhost": "proposta-credito", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "fila-resultado-bureau", "vhost": "proposta-credito", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "fila-solicitacao-contrato", "vhost": "proposta-credito", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "fila-solicitacao-analise.dlq", "vhost": "proposta-credito", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "fila-solicitacao-bureau.dlq", "vhost": "proposta-credito", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "fila-resultado-bureau.dlq", "vhost": "proposta-credito", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "fila-solicitacao-contrato.dlq", "vhost": "proposta-credito", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } }
+  ],
+  "bindings": [
+    { "source": "proposta-credito.credito.v1", "vhost": "proposta-credito", "destination": "fila-solicitacao-analise", "destination_type": "queue", "routing_key": "analise.solicitar", "arguments": {} },
+    { "source": "proposta-credito.credito.v1", "vhost": "proposta-credito", "destination": "fila-solicitacao-bureau", "destination_type": "queue", "routing_key": "bureau.solicitar", "arguments": {} },
+    { "source": "proposta-credito.credito.v1", "vhost": "proposta-credito", "destination": "fila-resultado-bureau", "destination_type": "queue", "routing_key": "bureau.resultado", "arguments": {} },
+    { "source": "proposta-credito.credito.v1", "vhost": "proposta-credito", "destination": "fila-solicitacao-contrato", "destination_type": "queue", "routing_key": "contrato.gerar", "arguments": {} },
+    { "source": "proposta-credito.credito.dlx.v1", "vhost": "proposta-credito", "destination": "fila-solicitacao-analise.dlq", "destination_type": "queue", "routing_key": "fila-solicitacao-analise", "arguments": {} },
+    { "source": "proposta-credito.credito.dlx.v1", "vhost": "proposta-credito", "destination": "fila-solicitacao-bureau.dlq", "destination_type": "queue", "routing_key": "fila-solicitacao-bureau", "arguments": {} },
+    { "source": "proposta-credito.credito.dlx.v1", "vhost": "proposta-credito", "destination": "fila-resultado-bureau.dlq", "destination_type": "queue", "routing_key": "fila-resultado-bureau", "arguments": {} },
+    { "source": "proposta-credito.credito.dlx.v1", "vhost": "proposta-credito", "destination": "fila-solicitacao-contrato.dlq", "destination_type": "queue", "routing_key": "fila-solicitacao-contrato", "arguments": {} }
+  ],
+  "policies": [
+    { "name": "analise", "vhost": "proposta-credito", "pattern": "^fila-solicitacao-analise$", "apply-to": "quorum_queues", "priority": 10, "definition": { "dead-letter-exchange": "proposta-credito.credito.dlx.v1", "dead-letter-routing-key": "fila-solicitacao-analise", "dead-letter-strategy": "at-least-once", "overflow": "reject-publish", "max-length": 10000, "delivery-limit": 20 } },
+    { "name": "bureau", "vhost": "proposta-credito", "pattern": "^fila-solicitacao-bureau$", "apply-to": "quorum_queues", "priority": 10, "definition": { "dead-letter-exchange": "proposta-credito.credito.dlx.v1", "dead-letter-routing-key": "fila-solicitacao-bureau", "dead-letter-strategy": "at-least-once", "overflow": "reject-publish", "max-length": 10000, "delivery-limit": 20 } },
+    { "name": "resultado", "vhost": "proposta-credito", "pattern": "^fila-resultado-bureau$", "apply-to": "quorum_queues", "priority": 10, "definition": { "dead-letter-exchange": "proposta-credito.credito.dlx.v1", "dead-letter-routing-key": "fila-resultado-bureau", "dead-letter-strategy": "at-least-once", "overflow": "reject-publish", "max-length": 10000, "delivery-limit": 20 } },
+    { "name": "contrato", "vhost": "proposta-credito", "pattern": "^fila-solicitacao-contrato$", "apply-to": "quorum_queues", "priority": 10, "definition": { "dead-letter-exchange": "proposta-credito.credito.dlx.v1", "dead-letter-routing-key": "fila-solicitacao-contrato", "dead-letter-strategy": "at-least-once", "overflow": "reject-publish", "max-length": 10000, "delivery-limit": 20 } },
+    { "name": "dlq-capacity", "vhost": "proposta-credito", "pattern": "\\.dlq$", "apply-to": "quorum_queues", "priority": 10, "definition": { "overflow": "reject-publish", "max-length": 5000 } }
+  ]
+}
