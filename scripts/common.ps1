@@ -33,7 +33,7 @@ function Import-LocalEnvironment {
         $values = @{}
         foreach ($line in Get-Content -LiteralPath $envFile) {
             if ($line -match '^\s*(#.*)?$') { continue }
-            if ($line -notmatch '^(ORACLE_PASSWORD|APP_USER_PASSWORD|PC_RUNTIME_PASSWORD|ORACLE_PORT)=([A-Za-z0-9]+)$') {
+            if ($line -notmatch '^(ORACLE_PASSWORD|APP_USER_PASSWORD|PC_RUNTIME_PASSWORD|ORACLE_PORT|DEV_ADMIN_TOKEN|DEV_EMPRESA_A_TOKEN|DEV_EMPRESA_B_TOKEN|DEV_ANALISTA_TOKEN|DEV_OPERADOR_TOKEN)=([A-Za-z0-9]+)$') {
                 throw 'Formato invalido no .env. Use os valores alfanumericos gerados pelo bootstrap.'
             }
             $values[$Matches[1]] = $Matches[2]
@@ -50,6 +50,21 @@ function Import-LocalEnvironment {
         if ($oraclePort -lt 1024 -or $oraclePort -gt 65535) { throw 'ORACLE_PORT deve estar entre 1024 e 65535.' }
         $env:ConnectionStrings__Oracle = "User Id=PC_APP;Password=$($values['PC_RUNTIME_PASSWORD']);Data Source=localhost:$oraclePort/FREEPDB1;Connection Timeout=5;"
         $env:ConnectionStrings__OracleMigrations = "User Id=PC_OWNER;Password=$($values['APP_USER_PASSWORD']);Data Source=localhost:$oraclePort/FREEPDB1;Connection Timeout=5;"
+        $identitySpecs = @(
+            @('DEV_ADMIN_TOKEN', 'admin-local', 'Administrador'),
+            @('DEV_EMPRESA_A_TOKEN', 'empresa-a', 'Empresa'),
+            @('DEV_EMPRESA_B_TOKEN', 'empresa-b', 'Empresa'),
+            @('DEV_ANALISTA_TOKEN', 'analista-local', 'Analista'),
+            @('DEV_OPERADOR_TOKEN', 'operador-local', 'Operador')
+        )
+        for ($index = 0; $index -lt $identitySpecs.Count; $index++) {
+            $tokenName, $subject, $role = $identitySpecs[$index]
+            if ($values.ContainsKey($tokenName)) {
+                [Environment]::SetEnvironmentVariable("DevelopmentAuth__Identities__${index}__Token", $values[$tokenName], 'Process')
+                [Environment]::SetEnvironmentVariable("DevelopmentAuth__Identities__${index}__Subject", $subject, 'Process')
+                [Environment]::SetEnvironmentVariable("DevelopmentAuth__Identities__${index}__Role", $role, 'Process')
+            }
+        }
     }
     if (-not $env:ConnectionStrings__Oracle -or -not $env:ConnectionStrings__OracleMigrations) {
         throw 'Configure ConnectionStrings__Oracle e ConnectionStrings__OracleMigrations ou execute bootstrap.ps1.'

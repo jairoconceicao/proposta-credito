@@ -13,6 +13,7 @@ public sealed class WorkerLifecycleTests
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await worker.StopAsync(deadline.Token);
         Assert.NotNull(worker.ExecuteTask);
-        Assert.True(worker.ExecuteTask.IsCompletedSuccessfully);
+        // .NET 10 schedules ExecuteAsync on the pool; shutdown may cancel it before its first instruction.
+        Assert.True(worker.ExecuteTask.IsCompletedSuccessfully || worker.ExecuteTask.IsCanceled);
     }
 }

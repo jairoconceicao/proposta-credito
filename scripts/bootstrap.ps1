@@ -22,6 +22,12 @@ try {
         @($content; "ORACLE_PORT=$OraclePort") | Set-Content -LiteralPath '.env' -Encoding utf8NoBOM
         Write-Host '.env local criado com senhas aleatorias; arquivo ignorado pelo Git.'
     }
+    foreach ($name in @('DEV_ADMIN_TOKEN', 'DEV_EMPRESA_A_TOKEN', 'DEV_EMPRESA_B_TOKEN', 'DEV_ANALISTA_TOKEN', 'DEV_OPERADOR_TOKEN')) {
+        if (-not (Select-String -LiteralPath '.env' -Pattern "^$name=" -Quiet)) {
+            "$name=$([Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32)))" |
+                Add-Content -LiteralPath '.env' -Encoding utf8NoBOM
+        }
+    }
     Import-LocalEnvironment
     Invoke-Checked docker @('compose', 'up', '-d', '--wait', '--wait-timeout', '600', 'oracle')
     Invoke-Checked dotnet @('restore', 'PropostaCredito.sln', '--locked-mode')

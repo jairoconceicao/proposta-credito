@@ -8,6 +8,8 @@ Atualização de 30 de outubro de 2026: o repositório Git já foi criado, com `
 
 ## 1. Objetivo
 
+Progresso M1: cadastro/propostas e harness mínimo já implementados e verificados localmente; veja [evidências](M1-VALIDACAO.md). O conteúdo a seguir preserva a proposta e não substitui os status do backlog.
+
 Evoluir o Proposta Crédito de uma proposta documental para um backend executável e verificável, com desenvolvimento organizado no GitHub e um harness de AI-SDLC integrado ao fluxo de engenharia.
 
 AI-SDLC significa, nesta proposta, o uso de inteligência artificial no ciclo de desenvolvimento de software. O harness fornece contexto, prepara o ambiente, controla a execução, executa verificações e registra evidências das alterações produzidas com assistência de IA.

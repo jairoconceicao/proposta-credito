@@ -21,6 +21,8 @@ try {
         [void]$start.ArgumentList.Add('--urls')
         [void]$start.ArgumentList.Add("http://127.0.0.1:$port")
         $start.UseShellExecute = $false
+        $start.Environment['ASPNETCORE_ENVIRONMENT'] = 'Development'
+        $start.Environment['Authentication__Mode'] = 'Development'
         $start.CreateNoWindow = $true
         $start.RedirectStandardOutput = $true
         $start.RedirectStandardError = $true

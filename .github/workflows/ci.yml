@@ -39,7 +39,10 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: test-results
-          path: artifacts/test-results/*.trx
+          path: |
+            artifacts/test-results/*.trx
+            artifacts/harness/evals/**/results.json
+            artifacts/harness/runs/**/state.json
           if-no-files-found: warn
           retention-days: 7
       - name: Stop disposable Oracle

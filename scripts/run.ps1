@@ -11,6 +11,8 @@ Push-Location $script:RepositoryRoot
 try {
     Initialize-DotnetEnvironment
     Import-LocalEnvironment
+    $env:ASPNETCORE_ENVIRONMENT = 'Development'
+    $env:Authentication__Mode = 'Development'
     $port = if ($Service -eq 'Api') { 5080 } else { 5081 }
     Invoke-Checked dotnet @('run', '--project', "src/PropostaCredito.$Service", '--configuration', 'Release', '--no-launch-profile', '--', '--urls', "http://127.0.0.1:$port")
 }
