@@ -2,6 +2,8 @@
 
 ## Proposta e arquitetura
 
+- [Plano de implementação e marcos de entrega](docs/PLANO-IMPLEMENTACAO.md)
+- [Backlog de tarefas, dependências e critérios de aceite](docs/BACKLOG.md)
 - [Proposta do produto e sequência de entregas](PROPOSTA.md)
 - [Proposta de evolução, harness de AI-SDLC e organização no GitHub](docs/PROPOSTA-EVOLUCAO-AI-SDLC.md)
 - [Arquitetura PA-1: decisões, gaps resolvidos e critérios de aceite](docs/architecture/pa-1.md)

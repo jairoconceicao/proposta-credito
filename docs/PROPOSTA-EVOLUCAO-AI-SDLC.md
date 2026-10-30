@@ -4,6 +4,8 @@ Data: 28 de outubro de 2026
 Status: proposta para implementação  
 Base: revisão da estrutura e da documentação local do Proposta Crédito
 
+Atualização de 30 de outubro de 2026: o repositório Git já foi criado, com `main`, histórico inicial e remoto `origin` configurado. Aplicação e CI/CD ainda não foram implementados no checkout. O diagnóstico abaixo preserva a revisão inicial; a execução passa a ser acompanhada no [plano de implementação](PLANO-IMPLEMENTACAO.md) e no [backlog](BACKLOG.md).
+
 ## 1. Objetivo
 
 Evoluir o Proposta Crédito de uma proposta documental para um backend executável e verificável, com desenvolvimento organizado no GitHub e um harness de AI-SDLC integrado ao fluxo de engenharia.
