@@ -1,7 +1,7 @@
 # Backlog de implementação — Proposta Crédito
 
 Referência: [plano de implementação](PLANO-IMPLEMENTACAO.md), [produto](../PROPOSTA.md) e [PA-1](architecture/pa-1.md).  
-Data: 30 de outubro de 2026. Todos os itens estão pendentes; os IDs abaixo são locais, não números de Issues já criadas.
+Data: 30 de outubro de 2026. PC-01 a PC-05 implementadas e verificadas localmente; PC-06 implementada com aceite remoto pendente. Os demais itens estão pendentes. Os IDs abaixo são locais, não números de Issues já criadas. Veja [evidências do M0](M0-VALIDACAO.md).
 
 ## Como executar
 
@@ -11,45 +11,50 @@ Prioridades: **P0** funda o projeto e entrega a primeira decisão; **P1** comple
 
 ## M0 — Fundação e CI
 
-### [ ] PC-01 — Preparar convenções do repositório
+### [x] PC-01 — Preparar convenções do repositório
 
 **Prioridade:** P0 · **Depende de:** nenhuma.
 
 - Criar `.gitignore`, `.editorconfig`, templates de Issue/PR e convenções de contribuição com branches `codex/` para alterações assistidas.
 - **Aceite:** build, segredos e artefatos locais ignorados; template solicita critérios e evidências; README distingue implementado de planejado. Registrar escolha de licença pelo mantenedor antes de adicioná-la.
 - **Verificação:** revisar arquivos rastreados e simular preenchimento dos templates.
+- **Resultado M0:** convenções/templates implementados; arquivos gerados e segredos ignorados. Mantenedor escolheu manter sem licença em 30 de outubro de 2026.
 
-### [ ] PC-02 — Validar stack e registrar ADR inicial
+### [x] PC-02 — Validar stack e registrar ADR inicial
 
 **Prioridade:** P0 · **Depende de:** nenhuma.
 
 - Comprovar SDK .NET, provedor Oracle, acesso a dados e mecanismo de migrations; selecionar imagens reproduzíveis e estratégia de testes.
 - **Aceite:** ADR registra versões, comandos e resultado de conexão/transação; `global.json` fixa SDK compatível. Reafirmar módulos, propriedade de escritas e transações do PA-1.
 - **Verificação:** prova executável com Oracle, incluindo commit e rollback; não adotar compatibilidade apenas presumida.
+- **Resultado M0:** [ADR 0001](adr/0001-fundacao-dotnet-oracle.md); commit/rollback comprovados em Oracle real.
 
-### [ ] PC-03 — Criar solução .NET e projetos iniciais
+### [x] PC-03 — Criar solução .NET e projetos iniciais
 
 **Prioridade:** P0 · **Depende de:** PC-02.
 
 - Criar API, Worker, projetos de testes e estrutura mínima dos módulos usados na primeira entrega.
 - **Aceite:** restore/build/test executáveis; API e Worker iniciam; configuração por ambiente e cancelamento no encerramento funcionam. Primeiro teste verifica comportamento real, sem teste vazio para deixar CI verde.
 - **Verificação:** build e teste a partir de checkout limpo; smoke test dos processos.
+- **Resultado M0:** API, Worker, infraestrutura e migrator compilam; testes de configuração e cancelamento, além de smoke HTTP dos hosts, executados.
 
-### [ ] PC-04 — Provisionar Oracle local e migrations
+### [x] PC-04 — Provisionar Oracle local e migrations
 
 **Prioridade:** P0 · **Depende de:** PC-02, PC-03.
 
 - Criar configuração local de infraestrutura, exemplo de variáveis sem segredos, schema versionado e usuário da aplicação com permissões apropriadas.
 - **Aceite:** instância vazia recebe migrations e uma segunda aplicação não repete alterações; credenciais não são versionadas; readiness aguarda banco utilizável.
 - **Verificação:** integração Oracle real com persistência e rollback; reproduzir preparação do zero em ambiente descartável.
+- **Resultado M0:** volume novo inicializado; migrations reaplicadas sem duplicação; owner e runtime separados, com restrição de escrita comprovada.
 
-### [ ] PC-05 — Automatizar preparação e verificação local
+### [x] PC-05 — Automatizar preparação e verificação local
 
 **Prioridade:** P0 · **Depende de:** PC-03, PC-04.
 
 - Implementar `scripts/bootstrap.ps1` e `scripts/verify.ps1`; documentar pré-requisitos, preparação, execução e diagnóstico. Adicionar logs estruturados e health checks iniciais.
 - **Aceite:** scripts falham com código diferente de zero em erro; execução repetida é previsível; readiness verifica schema/Oracle e liveness independe de terceiros. Segredos e dados de negócio não aparecem nos logs.
 - **Verificação:** executar comandos documentados e provocar dependência ausente/configuração inválida.
+- **Resultado M0:** bootstrap/verify/run/smoke documentados; verify propaga falhas; testes cobrem configuração inválida, banco inacessível e schema incompatível.
 
 ### [ ] PC-06 — Implementar CI e checks de PR
 
@@ -58,6 +63,7 @@ Prioridades: **P0** funda o projeto e entrega a primeira decisão; **P1** comple
 - Criar GitHub Actions para PRs e `main`: restore, build, testes unitários, integração Oracle e relatórios; auditar/configurar checks obrigatórios de `main` conforme disponibilidade.
 - **Aceite:** primeira execução remota aprovada; teste quebrado torna workflow vermelho; integração não é silenciosamente ignorada. PRs sem confiança não recebem segredos privilegiados. Proteções aplicadas ou limitação registrada.
 - **Verificação:** guardar link da execução remota, resultado da falha controlada e evidência das configurações; validação YAML local sozinha não conclui a tarefa.
+- **Resultado M0:** workflow implementado usando bootstrap/verify completos e credenciais efêmeras; verificação local aprovada. Consulta GitHub retornou `Branch not protected` para `main`. Permanecem pendentes primeira execução remota, falha controlada no Actions e configuração dos checks/revisão obrigatórios após publicação. Nenhum push foi realizado nesta entrega.
 
 ## M1 — Cadastro e propostas
 
@@ -372,7 +378,7 @@ Esta matriz indica quem deve implementar a verificação; não comprova que ela 
 
 ## Controle dos marcos
 
-- [ ] M0 — Fundação e CI comprovados.
+- [ ] M0 — Fundação comprovada localmente; falta aceite remoto de PC-06.
 - [ ] M1 — Cadastro, propostas e piloto AI-SDLC comprovados.
 - [ ] M2 — Primeira decisão de ponta a ponta comprovada.
 - [ ] M3 — Resiliência e decisão manual comprovadas.

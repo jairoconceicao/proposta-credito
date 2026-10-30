@@ -1,6 +1,6 @@
 # PA-1 — Concessão de crédito assíncrona
 
-Status: proposta revisada, ainda sem implementação. O repositório contém somente documentação; as garantias abaixo são requisitos de implementação e validação.
+Status: arquitetura de negócio proposta, ainda sem implementação dos fluxos de concessão. A fundação M0 já contém API/Worker, Oracle, migrations e verificações, conforme [evidências](../M0-VALIDACAO.md); as garantias de negócio abaixo continuam sendo requisitos para os próximos marcos.
 
 [Diagrama principal](pa-1.mmd) · [Escopo do produto](../../PROPOSTA.md)
 

@@ -1,0 +1,23 @@
+name: proposta-credito
+services:
+  oracle:
+    image: gvenzl/oracle-free:23.26.3-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093
+    ports:
+      - "127.0.0.1:${ORACLE_PORT:-15210}:1521"
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:?Execute scripts/bootstrap.ps1}
+      APP_USER: PC_OWNER
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD:?Execute scripts/bootstrap.ps1}
+      PC_RUNTIME_PASSWORD: ${PC_RUNTIME_PASSWORD:?Execute scripts/bootstrap.ps1}
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./infra/oracle/10-runtime-user.sh:/container-entrypoint-initdb.d/10-runtime-user.sh:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    shm_size: 1gb
+volumes:
+  oracle-data:
